@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Recent Posts by Category Widget
  * Description: A custom widget to display recent posts from a selected category.
- * Version: 1.0
+ * Version: 1.2
  * Author: Aadam Hashmi
  */
 
@@ -57,8 +57,9 @@ class Recent_Posts_By_Category_Widget extends WP_Widget {
         $num_posts  = isset($instance['num_posts']) ? $instance['num_posts'] : 5;
         $show_thumb = isset($instance['show_thumb']) ? (bool) $instance['show_thumb'] : true;
 
-        $categories = get_terms([
-            'taxonomy'   => 'category',
+        $categories = get_categories([
+            'orderby'    => 'name',
+            'order'      => 'ASC',
             'hide_empty' => false,
         ]);
         ?>
@@ -73,14 +74,14 @@ class Recent_Posts_By_Category_Widget extends WP_Widget {
             <select class="widefat" id="<?php echo $this->get_field_id('category'); ?>"
                     name="<?php echo $this->get_field_name('category'); ?>">
                 <?php
-                if (!empty($categories) && !is_wp_error($categories)) {
+                if (!empty($categories)) {
                     foreach ($categories as $cat) {
                         echo '<option value="' . esc_attr($cat->term_id) . '" ' . selected($category, $cat->term_id, false) . '>';
                         echo esc_html($cat->name);
                         echo '</option>';
                     }
                 } else {
-                    echo '<option disabled>No categories found</option>';
+                    echo '<option disabled>No categories available</option>';
                 }
                 ?>
             </select>
