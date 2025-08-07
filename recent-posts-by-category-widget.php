@@ -19,17 +19,19 @@ class Recent_Posts_By_Category_Widget extends WP_Widget {
     public function widget($args, $instance) {
         echo $args['before_widget'];
 
-        $title     = apply_filters('widget_title', $instance['title']);
-        $category  = !empty($instance['category']) ? $instance['category'] : '';
-        $num_posts = !empty($instance['num_posts']) ? absint($instance['num_posts']) : 5;
+        $title      = apply_filters('widget_title', $instance['title']);
+        $category   = !empty($instance['category']) ? $instance['category'] : '';
+        $num_posts  = !empty($instance['num_posts']) ? absint($instance['num_posts']) : 5;
         $show_thumb = isset($instance['show_thumb']) ? (bool) $instance['show_thumb'] : true;
 
-        if ($title) echo $args['before_title'] . $title . $args['after_title'];
+        if ($title) {
+            echo $args['before_title'] . esc_html($title) . $args['after_title'];
+        }
 
         $query_args = [
-            'cat' => $category,
+            'cat'            => $category,
             'posts_per_page' => $num_posts,
-            'post_status' => 'publish'
+            'post_status'    => 'publish',
         ];
 
         $posts = get_posts($query_args);
@@ -38,10 +40,10 @@ class Recent_Posts_By_Category_Widget extends WP_Widget {
         foreach ($posts as $post) {
             echo '<li>';
             if ($show_thumb && has_post_thumbnail($post->ID)) {
-                echo get_the_post_thumbnail($post->ID, 'thumbnail');
+                echo get_the_post_thumbnail($post->ID, 'thumbnail', ['style' => 'margin-bottom:5px;']);
             }
             echo '<a href="' . get_permalink($post->ID) . '">' . esc_html($post->post_title) . '</a>';
-            echo '<span class="post-date">' . get_the_date('', $post->ID) . '</span>';
+            echo '<br><span class="post-date">' . get_the_date('', $post->ID) . '</span>';
             echo '</li>';
         }
         echo '</ul>';
@@ -50,13 +52,15 @@ class Recent_Posts_By_Category_Widget extends WP_Widget {
     }
 
     public function form($instance) {
-        $title     = isset($instance['title']) ? $instance['title'] : '';
-        $category  = isset($instance['category']) ? $instance['category'] : '';
-        $num_posts = isset($instance['num_posts']) ? $instance['num_posts'] : 5;
+        $title      = isset($instance['title']) ? $instance['title'] : '';
+        $category   = isset($instance['category']) ? $instance['category'] : '';
+        $num_posts  = isset($instance['num_posts']) ? $instance['num_posts'] : 5;
         $show_thumb = isset($instance['show_thumb']) ? (bool) $instance['show_thumb'] : true;
 
-        $categories = get_categories(['hide_empty' => false]);
-
+        $categories = get_terms([
+            'taxonomy'   => 'category',
+            'hide_empty' => false,
+        ]);
         ?>
         <p>
             <label for="<?php echo $this->get_field_id('title'); ?>">Title:</label>
@@ -68,11 +72,17 @@ class Recent_Posts_By_Category_Widget extends WP_Widget {
             <label for="<?php echo $this->get_field_id('category'); ?>">Category:</label>
             <select class="widefat" id="<?php echo $this->get_field_id('category'); ?>"
                     name="<?php echo $this->get_field_name('category'); ?>">
-                <?php foreach ($categories as $cat): ?>
-                    <option value="<?php echo $cat->term_id; ?>" <?php selected($category, $cat->term_id); ?>>
-                        <?php echo esc_html($cat->name); ?>
-                    </option>
-                <?php endforeach; ?>
+                <?php
+                if (!empty($categories) && !is_wp_error($categories)) {
+                    foreach ($categories as $cat) {
+                        echo '<option value="' . esc_attr($cat->term_id) . '" ' . selected($category, $cat->term_id, false) . '>';
+                        echo esc_html($cat->name);
+                        echo '</option>';
+                    }
+                } else {
+                    echo '<option disabled>No categories found</option>';
+                }
+                ?>
             </select>
         </p>
         <p>
